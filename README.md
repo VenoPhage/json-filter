@@ -7,6 +7,6 @@ Intended for use with [Region Scanner](https://github.com/RundownRhino/RegionSca
 
 ## Arguments
 - `--generated`: Path to generated JSON file
-- `--filter`: Path to filter JSON file (default: filter.json)`
-- `--output`: Path for output JSON file (default: filtered_data.json)`
+- `--filter`: Path to filter JSON file (default: `filter.json`)
+- `--output`: Path for output JSON file (default: `filtered_data.json`)
 - `--regex`: Custom regex pattern for modded ores
