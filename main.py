@@ -1,38 +1,58 @@
 import json
 import argparse
+import re
 
 
-def filter_json(generated_file, filter_file, output_file):
-    # Load the generated JSON data
+def filter_json(generated_file, filter_file, output_file, regex_pattern):
     with open(generated_file, "r") as f:
         generated_data = json.load(f)
 
-    # Load the filter JSON data
     with open(filter_file, "r") as f:
         filter_data = json.load(f)
 
-    # Extract block values from the filter
-    if isinstance(filter_data, list) and len(filter_data) > 0:
-        if isinstance(filter_data[0], str):
-            # Filter is a list of block strings
-            filter_blocks = set(filter_data)
-        else:
-            # Filter is a list of objects with "block" keys
-            filter_blocks = {item["block"] for item in filter_data}
-    else:
-        filter_blocks = set()
+    modded_ore_pattern = re.compile(r"^(?!minecraft:)[^:]+:.+_ore$")
 
-    # Filter the generated data
+    if regex_pattern.strip() == "":
+        modded_ore_pattern = None
+        print("Regex filtering disabled")
+    else:
+        try:
+            modded_ore_pattern = re.compile(regex_pattern)
+            print(f"Using regex pattern: {regex_pattern}")
+        except re.error as e:
+            print(f"Invalid regex pattern: {e}")
+            exit(1)
+
+    filter_blocks = set(filter_data)
     filtered_data = [
-        entry for entry in generated_data if entry.get("block") in filter_blocks
+        entry
+        for entry in generated_data
+        if (
+            entry.get("block") in filter_blocks  # Vanilla ores
+            or (  # Modded ores (if regex enabled)
+                modded_ore_pattern and modded_ore_pattern.match(entry.get("block", ""))
+            )
+        )
     ]
 
-    # Save the filtered data to the output file
+    matched_blocks = sorted({entry.get("block") for entry in filtered_data})
+
+    print("\nMatched blocks:")
+    for block in matched_blocks:
+        print(f" - {block}")
+
+    response = input("\nIs this list correct? (y/n): ").strip().lower()
+    if response != "y":
+        print("Aborting - no changes saved.")
+        exit()
+
     with open(output_file, "w") as f:
         json.dump(filtered_data, f, indent=2)
 
 
 def get_file_paths():
+    default_regex = r"^(?!minecraft:)[^:]+:.+_ore$"
+
     parser = argparse.ArgumentParser(description="Filter JSON objects by block entries")
     parser.add_argument("--generated", help="Path to generated JSON file")
     parser.add_argument(
@@ -40,6 +60,11 @@ def get_file_paths():
     )
     parser.add_argument(
         "--output", help="Path for output JSON file", default="filtered_data.json"
+    )
+    parser.add_argument(
+        "--regex",
+        help=f"Custom regex pattern for modded ores. Default: '{default_regex}'",
+        default=default_regex,
     )
 
     args = parser.parse_args()
@@ -49,10 +74,10 @@ def get_file_paths():
     filter_file = args.filter or input("Enter path to filter JSON file: ")
     output_file = args.output or input("Enter path for output JSON file: ")
 
-    return generated_file, filter_file, output_file
+    return generated_file, filter_file, output_file, args.regex
 
 
 if __name__ == "__main__":
-    generated_file, filter_file, output_file = get_file_paths()
-    filter_json(generated_file, filter_file, output_file)
-    print(f"Filtered data saved to {output_file}")
+    generated_file, filter_file, output_file, regex_pattern = get_file_paths()
+    filter_json(generated_file, filter_file, output_file, regex_pattern)
+    print(f"\nFiltered data saved to {output_file}")
