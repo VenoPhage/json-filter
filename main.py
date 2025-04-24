@@ -28,10 +28,8 @@ def filter_json(generated_file, filter_file, output_file, regex_pattern):
         entry
         for entry in generated_data
         if (
-            entry.get("block") in filter_blocks  # Vanilla ores
-            or (  # Modded ores (if regex enabled)
-                modded_ore_pattern and modded_ore_pattern.match(entry.get("block", ""))
-            )
+            entry.get("block") in filter_blocks
+            or (modded_ore_pattern and modded_ore_pattern.match(entry.get("block", "")))
         )
     ]
 
@@ -59,7 +57,7 @@ def get_file_paths():
         "--filter", help="Path to filter JSON file", default="filter.json"
     )
     parser.add_argument(
-        "--output", help="Path for output JSON file", default="filtered_data.json"
+        "--output", help="Path for output JSON file", default="world-gen.json"
     )
     parser.add_argument(
         "--regex",
@@ -69,7 +67,6 @@ def get_file_paths():
 
     args = parser.parse_args()
 
-    # Prompt for missing paths
     generated_file = args.generated or input("Enter path to generated JSON file: ")
     filter_file = args.filter or input("Enter path to filter JSON file: ")
     output_file = args.output or input("Enter path for output JSON file: ")
